@@ -4,13 +4,6 @@ import os
 from enum import Enum
 
 
-class DownloadStatus(Enum):
-    SUCCESS = 1
-    NOT_FOUND = 2
-    NONFREE_DETECTED = 4
-    FILE_EXISTS = 5
-
-
 def pdf_url(book_url):
     """Get the pdf link for a given book URL."""
 
@@ -36,12 +29,23 @@ def epub_url(book_url):
 
 
 def make_filename(entry):
+    """Makes a filename for a book to download by putting the title in CamelCase,
+    similar to what is done when you download the books from Springer.
+    """
     year = entry["Publication Year"]
     title = entry["Item Title"]
-    return f"{year}_Book_{title}".replace(" ", "")
+
+    filename = f"{year}_Book_{title}"
+
+    for c in [" ", ",", ".", ":", "/"]:
+        filename = filename.replace(c, "")
+
+    return filename
 
 
 def lint_if_html(filename):
+    """Check if a downloaded file is HTML from the springer website.
+    """
     with open(filename, "r") as f:
         try:
             is_pdf = "HTML" in f.readline()
@@ -50,13 +54,29 @@ def lint_if_html(filename):
     return is_pdf
 
 
+class DownloadStatus(Enum):
+    """Enum to represent the status codes returned by the download function.
+    """
+
+    SUCCESS = 1
+    NOT_FOUND = 2
+    NONFREE_DETECTED = 4
+    FILE_EXISTS = 5
+
+
 def download(url, filename, ignore_existing=False):
+    """Download a pdf or epub to a given filename.
+    """
     if ignore_existing or not os.path.isfile(filename):
         try:
             urllib.request.urlretrieve("http://" + url, filename)
         except urllib.request.HTTPError:
             return DownloadStatus.NOT_FOUND
         if os.path.isfile(filename) and lint_if_html(filename):
+            # if the URL was valid but just redirected to a HTML page,
+            # that means the book is not free and the PDF or EPUB links just redirected us to the
+            # HTML website of the book.
+            # So we should remove the downloaded file again and return the NONFREE_DETECTED status code.
             os.remove(filename)
             return DownloadStatus.NONFREE_DETECTED
         else:
@@ -115,41 +135,45 @@ def test_4():
     assert epub_status == DownloadStatus.FILE_EXISTS
 
 
-run_tests = False
+if __name__ == "__main__":
 
-if run_tests:
-    print("Doing some tests to warm up...")
-    test_1()
-    test_2()
-    test_3()
-    test_4()
-    print("Tests passed!")
-    print("")
+    run_tests = False
 
-df = pd.read_csv("SearchResults.csv")
-n_books = len(df)
+    if run_tests:
+        print("Doing some tests to warm up...")
+        test_1()
+        test_2()
+        test_3()
+        test_4()
+        print("Tests passed!")
+        print("")
 
-for i_book in range(n_books):
-    entry = df.loc[i_book]
+    df = pd.read_csv("SearchResults.csv")
+    n_books = len(df)
 
-    year = entry["Publication Year"]
-    title = entry["Item Title"]
-    enumerating_string = f"[{i_book+1}/{n_books}]"
-    indent = " " * len(enumerating_string)
-    print(enumerating_string + f" {title} ({year})")
+    for i_book in range(n_books):
+        entry = df.loc[i_book]
 
-    book_dir = f"{year}-{title}".replace(" ", "_")
+        year = entry["Publication Year"]
+        title = entry["Item Title"]
+        enumerating_string = f"[{i_book+1}/{n_books}]"
+        indent = " " * len(enumerating_string)
+        print(enumerating_string + f" {title} ({year})")
 
-    for c in [",", ".", ":"]:
-        book_dir = book_dir.replace(c, "")
+        book_dir = f"{year}-{title}".replace(" ", "_")
 
-    if not os.path.exists(book_dir):
-        os.makedirs(book_dir)
+        book_dir = book_dir.replace("/", "_")
 
-    filename = os.path.join(book_dir, make_filename(entry))
-    print(indent + " " + "-" * len(f"{title} ({year})"))
-    pdf_status = download_pdf(entry["URL"], filename)
-    print(indent + f" pdf: {pdf_status.name}")
-    epub_status = download_epub(entry["URL"], filename)
-    print(indent + f" epub: {epub_status.name}")
-    print("")
+        for c in [",", ".", ":"]:
+            book_dir = book_dir.replace(c, "")
+
+        if not os.path.exists(book_dir):
+            os.makedirs(book_dir)
+
+        filename = os.path.join(book_dir, make_filename(entry))
+        print(indent + " " + "-" * len(f"{title} ({year})"))
+        pdf_status = download_pdf(entry["URL"], filename)
+        print(indent + f" pdf: {pdf_status.name}")
+        epub_status = download_epub(entry["URL"], filename)
+        print(indent + f" epub: {epub_status.name}")
+        print("")
