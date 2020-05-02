@@ -67,19 +67,22 @@ class DownloadStatus(Enum):
 def download(url, filename, ignore_existing=False):
     """Download a pdf or epub to a given filename.
     """
+
+    filename_tmp = filename + ".part"
+
     if ignore_existing or not os.path.isfile(filename):
         try:
-            urllib.request.urlretrieve("http://" + url, filename)
+            urllib.request.urlretrieve("http://" + url, filename_tmp)
         except urllib.request.HTTPError:
             return DownloadStatus.NOT_FOUND
-        if os.path.isfile(filename) and lint_if_html(filename):
-            # if the URL was valid but just redirected to a HTML page,
-            # that means the book is not free and the PDF or EPUB links just redirected us to the
-            # HTML website of the book.
-            # So we should remove the downloaded file again and return the NONFREE_DETECTED status code.
-            os.remove(filename)
+        if os.path.isfile(filename_tmp) and lint_if_html(filename_tmp):
+            # if the URL was valid but just redirected to a HTML page, that means the book is not free and the PDF or
+            # EPUB links just redirected us to the HTML website of the book. So we should remove the downloaded file
+            # again and return the NONFREE_DETECTED status code.
+            os.remove(filename_tmp)
             return DownloadStatus.NONFREE_DETECTED
         else:
+            os.rename(filename_tmp, filename)
             return DownloadStatus.SUCCESS
     else:
         return DownloadStatus.FILE_EXISTS
