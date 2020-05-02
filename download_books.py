@@ -140,6 +140,9 @@ for i_book in range(n_books):
 
     book_dir = f"{year}-{title}".replace(" ", "_")
 
+    for c in [",", ".", ":"]:
+        book_dir = book_dir.replace(c, "")
+
     if not os.path.exists(book_dir):
         os.makedirs(book_dir)
 
