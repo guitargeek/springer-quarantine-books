@@ -12,7 +12,7 @@ Search results obtained on May 2, 2020 are included in the repository, so the sc
 
 ## Instructions
 
-Just clone the repository, update the `SearchResults.csv` file if you  want, and run the [download_books.py](download_books.py) script. It will create one directory per book and attempt to download the **pdf** and **epub** file for each book. It can't be further configured at this point.
+Just clone the repository, update the `SearchResults.csv` file if you want, and run the [download_books.py](download_books.py) script. It will create one directory per book and attempt to download the **pdf** and **epub** file for each book. It can't be further configured at this point.
 
 ## Notes
 
@@ -21,6 +21,14 @@ Just clone the repository, update the `SearchResults.csv` file if you  want, and
    `NONFREE_DETECTED` status code for these books.
 3. The only status code you should worry about is if you see `NOT_FOUND` for a PDF. This should not happen, as all
    books in the search results should give you valid URLs and PDFs are always available
+
+As an alternative to this script, there is also a [script written in R on
+GitHub](https://github.com/renanxcortes/springerQuarantineBooksR). It might be also interesting to check out [this
+article](https://towardsdatascience.com/download-all-free-textbooks-from-springer-using-python-bd0b10e0ccc) which
+describes how to download all the PDFs with a simple python script. That article uses the **wget** python library
+for the downloads, but my script uses the **requests** module. According to the article, **wget** might be
+much much faster, as they claim to finish the loop in a few minutes versus a much longer time for me.
+Maybe that's just my slow internet connection.
 
 I will not further work on this script as it already did the job for me, but I'm always happy to
 receive pull requests!
